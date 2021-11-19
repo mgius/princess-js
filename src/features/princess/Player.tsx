@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { useAppSelector, useAppDispatch } from '../../app/hooks';
 import {
-  move_to, positionToType, selectPlayerBoardPosition, selectPlayerState
+  move_to, selectPlayerState
 } from './playerSlice';
 import styles from '../counter/Counter.module.css';
 import { O_WRONLY } from 'constants';
@@ -33,7 +33,7 @@ function PlayerEquipment() {
       <Jewelry worn={player.earrings > 0} name="Left Earring" />
       <Jewelry worn={player.earrings > 1} name="Right Earring" />
       <span className={styles.value}>
-        {positionToType(player.board_position)}
+        {player.board_position}
       </span>
     </div>
   )

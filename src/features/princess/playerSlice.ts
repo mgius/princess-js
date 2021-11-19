@@ -1,18 +1,24 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { isPartiallyEmittedExpression } from "typescript";
-import { RootState, AppThunk } from "../../app/store";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "../../app/store";
+import { Board, GameAction, PlayerState } from "./types";
 
-export interface PlayerState {
-  // Each piece of jewelry worn by the player
-  bracelet: boolean;
-  earrings: 0 | 1 | 2;
-  mysteryRing: boolean;
-  necklace: boolean;
-  ring: boolean;
-  crown: boolean;
-
-  // Where the player is on the board
-  board_position: number;
+function handleAction(state: PlayerState, action: GameAction) {
+  switch (action.type) {
+    case "pickup":
+      switch (action.jewelName) {
+        case "earrings":
+          if (state.earrings < 2) {
+            state.earrings += 1;
+          }
+          break;
+        default:
+          state[action.jewelName] = true;
+      }
+    case "putdownany":
+      break;
+    case "pickupany":
+      break;
+  }
 }
 
 // Each board space is unique.  on the real board there are two identical halves
@@ -29,18 +35,20 @@ enum BoardSpaces {
   CROWN = "Crown",
 }
 
+const DefaultBoard: Board = [
+  { type: "pickup", jewelName: "necklace" },
+  { type: "putdownany" },
+  { type: "pickup", jewelName: "bracelet" },
+  { type: "pickupany" },
+  { type: "pickup", jewelName: "ring" },
+  { type: "pickup", jewelName: "mysteryRing" },
+  { type: "pickup", jewelName: "earrings" },
+  { type: "pickup", jewelName: "crown" },
+];
+
 // In python we can iterate over enums and other things.  We'll just construct
 // an interable version of the enum here
-const board = [
-  BoardSpaces.NECKLACE,
-  BoardSpaces.PUT_BACK,
-  BoardSpaces.BRACELET,
-  BoardSpaces.TAKE_ANY_PIECE,
-  BoardSpaces.RING,
-  BoardSpaces.MYSTERY_RING,
-  BoardSpaces.EARRING,
-  BoardSpaces.CROWN,
-];
+const board = DefaultBoard;
 
 // Each Player has a position on the board and a number of unique jewelry pieces which may or may not be worn
 const initialState: PlayerState = {
@@ -60,35 +68,12 @@ export const playerSlice = createSlice({
   initialState: initialState,
   reducers: {
     // This will likely grow more complicated, but for now let's just move around the board.
+    move_to_new: (state, action: PayloadAction<GameAction>) => {},
     move_to: (state, action: PayloadAction<number>) => {
       state.board_position += action.payload;
       state.board_position %= board.length;
 
-      switch (positionToType(state.board_position)) {
-        case BoardSpaces.NECKLACE:
-          state.necklace = true;
-          break;
-        case BoardSpaces.BRACELET:
-          state.bracelet = true;
-          break;
-        case BoardSpaces.RING:
-          state.ring = true;
-          break;
-        case BoardSpaces.MYSTERY_RING:
-          state.mysteryRing = true;
-          break;
-        case BoardSpaces.EARRING:
-          if (state.earrings < 2) {
-            state.earrings += 1;
-          }
-          break;
-        case BoardSpaces.CROWN:
-          state.crown = true;
-          break;
-        case BoardSpaces.TAKE_ANY_PIECE:
-        case BoardSpaces.PUT_BACK:
-          break;
-      }
+      handleAction(state, board[state.board_position]);
     },
   },
 });
@@ -98,8 +83,6 @@ export const playerSlice = createSlice({
 export const selectPlayerBoardPosition = (state: RootState) =>
   state.player.board_position;
 export const selectPlayerState = (state: RootState) => state.player;
-export const positionToType = (position: number) =>
-  board[position % board.length];
 
 export const { move_to } = playerSlice.actions;
 export default playerSlice.reducer;
